@@ -1,81 +1,54 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import api from "@/services/api";
-import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const metrics = [
-  { label: "Correlation", value: 0.85, color: "text-primary", threshold: 0.7 },
-  {
-    label: "Cointegration",
-    value: 0.03,
-    color: "text-success",
-    threshold: 0.05,
-    inverse: true,
-  },
-  { label: "Hedge Ratio", value: 1.24, color: "text-secondary", max: 2 },
-  { label: "Z-Score", value: 2.15, color: "text-accent", max: 3 },
-];
-
-// export const MetricsPanel = () => {
-//   const [taskStatus, setTaskStatus] = useState("PENDING");
-// const taskId = "80d0090f-4c4e-4b60-a507-7fd46195291b"; // replace dynamically
-
-//   useEffect(() => {
-//     // Poll every 2 seconds
-//     const interval = setInterval(async () => {
-//       try {
-//         const res = await api.get(`/tasks/${taskId}`);
-//         console.log("🔁 Task check:", res.data);
-//         setTaskStatus(res.data.task_status);
-
-//         if (res.data.task_status === "SUCCESS") {
-//           clearInterval(interval); // stop polling
-//           console.log("✅ Task complete, fetching metrics...");
-//           const metrics = await api.get(
-//             "/pairs-metrics/NSE:RELIANCE-EQ/NSE:TCS-EQ"
-//           );
-//           console.log("📊 Metrics:", metrics.data);
-//         }
-//       } catch (err) {
-//         console.error("❌ Error checking task:", err);
-//       }
-//     }, 2000);
-
-//     return () => clearInterval(interval); // cleanup on unmount
-//   }, []);
-
-//   return (
-//     <div>
-//       <h2>Metrics Panel</h2>
-//       <p>Task Status: {taskStatus}</p>
-//     </div>
-//   );
-// };
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2 } from "lucide-react";
+import { useMetricsStore } from "@/store/useMetricsStore";
 
 export const MetricsPanel = () => {
-  // useEffect(() => {
-  //   // Start after 10 seconds
-  //   const timeout = setTimeout(() => {
-  //     const interval = setInterval(async () => {
-  //       api
-  //         .get("/pairs-metrics/NSE:RELIANCE-EQ/NSE:TCS-EQ")
-  //         .then((res) => {
-  //           console.log(res);
-  //           clearInterval(interval);
-  //         })
-  //         .catch((error) => {
-  //           console.log(error);
-  //         });
-  //     }, 2000);
+  const { metrics, status, error } = useMetricsStore();
 
-  //     // Cleanup interval when component unmounts
-  //     return () => clearInterval(interval);
-  //   }, 10000); // 10 seconds = 10000 ms
+  const [metricsData, setMetricsData] = useState([
+    { label: "Correlation", value: 0, color: "text-primary", threshold: 0.7 },
+    {
+      label: "Cointegration",
+      value: 0,
+      color: "text-success",
+      threshold: 0.05,
+      inverse: true,
+    },
+    { label: "Hedge Ratio", value: 0, color: "text-secondary", max: 2 },
+    { label: "Z-Score", value: 0, color: "text-accent", max: 3 },
+  ]);
 
-  //   // Cleanup timeout when component unmounts
-  //   return () => clearTimeout(timeout);
-  // }, []);
+  // 🧠 Update when metrics.summary changes
+  useEffect(() => {
+    if (metrics?.summary) {
+      const s = metrics.summary;
+      setMetricsData((prev) =>
+        prev.map((m) => {
+          switch (m.label) {
+            case "Correlation":
+              return { ...m, value: s.correlation ?? m.value };
+            case "Cointegration":
+              return { ...m, value: s.cointegration ?? m.value };
+            case "Hedge Ratio":
+              return { ...m, value: s.hedge_ratio ?? m.value };
+            case "Z-Score":
+              return { ...m, value: s.latest_z_score ?? m.value };
+            default:
+              return m;
+          }
+        })
+      );
+    }
+  }, [metrics?.summary]);
+
+  if (status === "error") {
+    return (
+      <div className="p-4 text-red-500 text-center">
+        Error: {error || "Failed to fetch metrics."}
+      </div>
+    );
+  }
 
   return (
     <Card className="glass-card animate-slide-up">
@@ -84,7 +57,7 @@ export const MetricsPanel = () => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-6 mb-6">
-          {metrics.map((metric) => {
+          {metricsData.map((metric) => {
             const percentage = metric.max
               ? (metric.value / metric.max) * 100
               : metric.value * 100;
@@ -144,7 +117,11 @@ export const MetricsPanel = () => {
         <div className="flex items-start gap-2 p-3 rounded-lg bg-success/10 border border-success/20">
           <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
           <p className="text-sm text-foreground/90 dark:text-foreground">
-            <span className="font-semibold">Cointegrated pair detected.</span>{" "}
+            <span className="font-semibold">
+              {metrics?.summary?.signal === "HOLD"
+                ? "Cointegrated pair detected."
+                : `Signal: ${metrics?.summary?.signal}`}
+            </span>{" "}
             Ready to trade with favorable correlation and hedge ratio.
           </p>
         </div>

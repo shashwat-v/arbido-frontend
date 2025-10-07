@@ -1,6 +1,6 @@
+// src/components/InputSidebar.tsx
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -17,17 +17,21 @@ import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { useMetricsStore } from "@/store/useMetricsStore";
 
+import TickerSelector from "@/components/TickerSelector";
+
 export const InputSidebar = () => {
+  // 🔹 Default tickers simplified
   const [ticker1, setTicker1] = useState("AAPL");
   const [ticker2, setTicker2] = useState("MSFT");
   const [zScore, setZScore] = useState([2]);
   const [capital, setCapital] = useState("100000");
-  const [isLoading, setIsLoading] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(2023, 0, 1),
     to: new Date(2024, 0, 1),
   });
+
   const { runCalculation, status, error } = useMetricsStore();
+  const isLoading = status === "running" || status === "pending";
 
   useEffect(() => {
     if (status === "success") {
@@ -39,12 +43,24 @@ export const InputSidebar = () => {
     }
   }, [status, error]);
 
+  // 🔹 simplified handleSubmit
   const handleSubmit = async () => {
+    if (!ticker1 || !ticker2) {
+      toast.error("Please select or type both tickers.");
+      return;
+    }
+    if (ticker1 === ticker2) {
+      toast.error("Tickers must be different.");
+      return;
+    }
+
+    const formattedTicker1 = `NSE:${ticker1}-EQ`;
+    const formattedTicker2 = `NSE:${ticker2}-EQ`;
+
     const startDate = dateRange?.from
       ? format(dateRange.from, "yyyy-MM-dd")
       : "";
     const endDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : "";
-
     const capitalAlloc = Number(capital);
     const zScoreNum = Number(zScore[0]);
 
@@ -54,8 +70,8 @@ export const InputSidebar = () => {
 
     try {
       await runCalculation(
-        ticker1,
-        ticker2,
+        formattedTicker1,
+        formattedTicker2,
         startDate,
         endDate,
         capitalAlloc,
@@ -70,6 +86,7 @@ export const InputSidebar = () => {
 
   return (
     <div className="w-full lg:w-80 space-y-4 p-4">
+      {/* Trade Inputs */}
       <Card className="glass-card animate-slide-up">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -78,28 +95,23 @@ export const InputSidebar = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="ticker1">Ticker 1</Label>
-            <Input
-              id="ticker1"
-              value={ticker1}
-              onChange={(e) => setTicker1(e.target.value.toUpperCase())}
-              placeholder="e.g., AAPL"
-              className="bg-background/50 border-border/50"
-            />
-          </div>
+          {/* ✅ Ticker 1 */}
+          <TickerSelector
+            label="Ticker 1"
+            value={ticker1}
+            onSelect={setTicker1}
+            placeholder="Type symbol or pick from list (e.g., RELIANCE)"
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="ticker2">Ticker 2</Label>
-            <Input
-              id="ticker2"
-              value={ticker2}
-              onChange={(e) => setTicker2(e.target.value.toUpperCase())}
-              placeholder="e.g., MSFT"
-              className="bg-background/50 border-border/50"
-            />
-          </div>
+          {/* ✅ Ticker 2 */}
+          <TickerSelector
+            label="Ticker 2"
+            value={ticker2}
+            onSelect={setTicker2}
+            placeholder="Type symbol or pick from list"
+          />
 
+          {/* ✅ Date Range Picker */}
           <div className="space-y-2">
             <Label htmlFor="daterange" className="flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" />
@@ -114,7 +126,7 @@ export const InputSidebar = () => {
                     !dateRange && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="h-4 w-4" />
                   {dateRange?.from ? (
                     dateRange.to ? (
                       <>
@@ -145,6 +157,7 @@ export const InputSidebar = () => {
         </CardContent>
       </Card>
 
+      {/* Parameters */}
       <Card
         className="glass-card animate-slide-up"
         style={{ animationDelay: "0.1s" }}
@@ -153,6 +166,7 @@ export const InputSidebar = () => {
           <CardTitle className="text-lg">Parameters</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Z-Score */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="zscore">Z-Score Threshold</Label>
@@ -176,24 +190,26 @@ export const InputSidebar = () => {
             </div>
           </div>
 
+          {/* Capital */}
           <div className="space-y-2">
             <Label htmlFor="capital">Capital Allocation</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 ₹
               </span>
-              <Input
+              <input
                 id="capital"
                 type="text"
                 value={capital}
                 onChange={(e) => setCapital(e.target.value)}
-                className="pl-7 bg-background/50 border-border/50 data-font"
+                className="pl-7 w-full bg-background/50 border-border/50 rounded"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Run Button */}
       <Button
         onClick={handleSubmit}
         disabled={isLoading}
