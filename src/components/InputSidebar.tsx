@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,8 +15,7 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
-import axios from "axios";
-import api from "@/services/api";
+import { useMetricsStore } from "@/store/useMetricsStore";
 
 export const InputSidebar = () => {
   const [ticker1, setTicker1] = useState("AAPL");
@@ -28,35 +27,45 @@ export const InputSidebar = () => {
     from: new Date(2023, 0, 1),
     to: new Date(2024, 0, 1),
   });
+  const { runCalculation, status, error } = useMetricsStore();
 
-  const handleSubmit = () => {
-    setIsLoading(true);
+  useEffect(() => {
+    if (status === "success") {
+      toast.success("Backtest completed successfully!");
+    } else if (status === "error") {
+      toast.error("❌ Backtest failed", {
+        description: error || "Unexpected error occurred.",
+      });
+    }
+  }, [status, error]);
+
+  const handleSubmit = async () => {
+    const startDate = dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : "";
+    const endDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : "";
+
+    const capitalAlloc = Number(capital);
+    const zScoreNum = Number(zScore[0]);
+
     toast.success("Running backtest...", {
       description: `Analyzing ${ticker1} vs ${ticker2}`,
     });
 
-    api
-      .post("/pairs-data", {
-        ticker_1: "NSE:RELIANCE-EQ",
-        ticker_2: "NSE:TCS-EQ",
-        start_date: "2024-10-20",
-        end_date: "2024-12-20",
-        capital: 1000000,
-        z_score: 2,
-      })
-      .then((response) => {
-        console.log("✅ Response received!");
-        console.log(response.data.group_id);
-      })
-      .catch((error) => {
-        console.error("❌ Error caught:");
-        console.error(error.response?.data || error.message);
+    try {
+      await runCalculation(
+        ticker1,
+        ticker2,
+        startDate,
+        endDate,
+        capitalAlloc,
+        zScoreNum
+      );
+    } catch (err) {
+      toast.error("❌ Backtest failed", {
+        description: error || "Unexpected error occurred.",
       });
-
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Backtest completed!");
-    }, 2000);
+    }
   };
 
   return (

@@ -8,12 +8,14 @@ import { SpreadChart } from "@/components/charts/SpreadChart";
 import { PortfolioChart } from "@/components/charts/PortfolioChart";
 import { BacktestSummary } from "@/components/BacktestSummary";
 import { ConsoleOutput } from "@/components/ConsoleOutput";
+import { GlobalLoader } from "@/components/GlobalLoader";
 
 const Index = () => {
   return (
     <div className="min-h-screen w-full bg-background">
+      <GlobalLoader />
       <HeaderBar />
-      
+
       <div className="pt-16 flex flex-col lg:flex-row w-full">
         {/* Left Sidebar */}
         <aside className="lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] overflow-y-auto">

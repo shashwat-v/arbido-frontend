@@ -54,28 +54,28 @@ const metrics = [
 // };
 
 export const MetricsPanel = () => {
-  useEffect(() => {
-    // Start after 10 seconds
-    const timeout = setTimeout(() => {
-      const interval = setInterval(async () => {
-        api
-          .get("/pairs-metrics/NSE:RELIANCE-EQ/NSE:TCS-EQ")
-          .then((res) => {
-            console.log(res);
-            clearInterval(interval);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      }, 2000);
+  // useEffect(() => {
+  //   // Start after 10 seconds
+  //   const timeout = setTimeout(() => {
+  //     const interval = setInterval(async () => {
+  //       api
+  //         .get("/pairs-metrics/NSE:RELIANCE-EQ/NSE:TCS-EQ")
+  //         .then((res) => {
+  //           console.log(res);
+  //           clearInterval(interval);
+  //         })
+  //         .catch((error) => {
+  //           console.log(error);
+  //         });
+  //     }, 2000);
 
-      // Cleanup interval when component unmounts
-      return () => clearInterval(interval);
-    }, 10000); // 10 seconds = 10000 ms
+  //     // Cleanup interval when component unmounts
+  //     return () => clearInterval(interval);
+  //   }, 10000); // 10 seconds = 10000 ms
 
-    // Cleanup timeout when component unmounts
-    return () => clearTimeout(timeout);
-  }, []);
+  //   // Cleanup timeout when component unmounts
+  //   return () => clearTimeout(timeout);
+  // }, []);
 
   return (
     <Card className="glass-card animate-slide-up">
