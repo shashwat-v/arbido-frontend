@@ -7,19 +7,18 @@ export const MetricsPanel = () => {
   const { metrics, status, error } = useMetricsStore();
 
   const [metricsData, setMetricsData] = useState([
-    { label: "Correlation", value: 0, color: "text-primary", threshold: 0.7 },
+    { label: "Correlation", value: 0.8, color: "text-primary", threshold: 0.7 },
     {
       label: "Cointegration",
-      value: 0,
+      value: 1.6,
       color: "text-success",
       threshold: 0.05,
       inverse: true,
     },
-    { label: "Hedge Ratio", value: 0, color: "text-secondary", max: 2 },
-    { label: "Z-Score", value: 0, color: "text-accent", max: 3 },
+    { label: "Hedge Ratio", value: 2.4, color: "text-secondary", max: 2 },
+    { label: "Z-Score", value: 2.8, color: "text-accent", max: 3 },
   ]);
 
-  // 🧠 Update when metrics.summary changes
   useEffect(() => {
     if (metrics?.summary) {
       const s = metrics.summary;
